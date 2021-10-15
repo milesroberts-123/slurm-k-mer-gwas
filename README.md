@@ -6,15 +6,15 @@ fastqc and multiqc - to identify adapters in whole genome sequencing data
 
 cutadapt - to trim adapters
 
-KMC - to count k-mers (could also use Jellyfish)
+[KMC](https://github.com/refresh-bio/KMC) - to count k-mers (could also use Jellyfish)
 
-GEMMA - to build genome-wide association models 
+[GEMMA](https://github.com/genetics-statistics/GEMMA) - to build genome-wide association models 
 
-SPAdes - to assemble WGS reads into scaffolds
+[SPAdes](https://github.com/ablab/spades) - to assemble WGS reads into scaffolds
 
 Bowtie or BLAST - for aligning k-mers, WGS reads, or scaffolds to a reference database or genome (if you have one)
 
-Seqkit and SeqTK - for general purpose sequence manipulation
+[Seqkit](https://bioinf.shenwei.me/seqkit/) and [SeqTK](https://github.com/lh3/seqtk) - for general purpose sequence manipulation
 
 R and python - for general purpose calculations, visualization
 
