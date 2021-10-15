@@ -110,4 +110,4 @@ s20_0_makeBLASTdb.bash - create a BLAST database of sequences you want to compar
 
 s20_1_BLAST.bash - BLAST the longest scaffold assembled from each k-mer to your reference database
 
-Finally, you can look at the alignments given to you by BLAST to find potential variants and genes controlling your traits of interest
+**Finally**, you can look at the alignments given to you by BLAST to find potential variants and genes controlling your traits of interest
