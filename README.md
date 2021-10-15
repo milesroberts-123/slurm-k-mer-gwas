@@ -1,6 +1,8 @@
 # slurm-k-mer-gwas
 k-mer-based GWAS on SLURM cluster
 
+**WARNING TO RANDOM INTERNET PEOPLE: THIS WORKFLOW IS NOT DESIGNED TO FUNCTION OUT-OF-THE BOX FOR EVERYONE ON EVERY SLURM CLUSTER** Your better off designing a k-mer-gwas workflow from scratch, but you can use some of the scripts here for inspiration. I would like to convert this series of scripts into a snakemake workflow at some point.
+
 ## Required software
 fastqc and multiqc - to identify adapters in whole genome sequencing data
 
