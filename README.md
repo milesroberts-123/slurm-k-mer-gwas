@@ -31,7 +31,7 @@ If you're using publically available data from the Short Read Archive:
 
 Additionally:
 
-* List of phenotypes for input into GEMMA (see GEMMA manual for more details). These phenotypes should also be normalized using the qqnorm function
+* List of phenotypes for input into GEMMA (see GEMMA manual for more details). These phenotypes should also be normalized using the qqnorm function in R
 
 * A fasta sequence of a reference genome if you have one
 
