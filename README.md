@@ -52,53 +52,58 @@ s06_0_fastqcCleanReads.bash - quality check after cutadapt, confirm higher quali
 
 s06_1_multiqc.bash - combine fastqc outputs for each run
 
-### Part 2 counting k-mers
+### Part 2 creating k-mer presence/absence matrix
 s07_count_kmers.bash - use KMC to count k-mers in WGS data. At this step you'll decide on the frequency threshold a k-mer must reach to be considered present (default: 10)
 
-s08_0_makeKmerCountList.bash - 
+s08_0_makeKmerCountList.bash - Group k-mers from different accessions into seperate lists. This will help with parallel processing later
 
 s08_1_estimateCoverage.bash - Use seqkit to count bases sequenced for each accession, which will be used to estimate coverage
 
 s08_2_createCoverageCovariateFile.Rmd - An R-file to investigate variation in sequencing coverage across accessions, which will influence k-mer calling
 
-s09_0_merge_kmers_parallel.bash
+s09_0_merge_kmers_parallel.bash - Use re-cursive join function in bash to merge k-mer counts for each accession
 
-s09_1_merge_kmers_parallel.bash
+s09_1_merge_kmers_parallel.bash - Use recursive join function in a second stage to complete merging (merging should always be broken into stages to allow for parallel processing)
 
-s10_remove_dups.bash
+### Part 3 filtering k-mers
+s10_remove_dups.bash - remove k-mers that have non-unique presence/absence patterns across accessions, this will likely remove over half of the k-mers in the current dataset
 
-s11_splitKmerMatix.bash
+s11_splitKmerMatix.bash - break filtered k-mer matrix into pieces to allow for parallel processing in further filtering
 
-s12_filterRareCommonKmers.bash
+s12_filterRareCommonKmers.bash - filter out rare k-mers and common k-mers (i.e. k-mers that are present in less than 5 % or more than 95 % of accessions respectively). Each k-mer that passes this filter will be converted into bimbam format for input to GEMMA
 
-s13_concatFilteredKmers.bash
+s13_concatFilteredKmers.bash - concatenate pieces of filtered k-mer presence/absence matrix
 
-s14_0_kmerGWASkinshipMatrix.bash
+### Part 4 k-mer-based GWAS
+s14_0_kmerGWASkinshipMatrix.bash - estimate kinship matrix using a random subset of k-mers (default 10,000,000). Then, impute missing phenotypes based on kinship matrix
 
-s14_1_kmerMVGWAS.bash
+s14_1_kmerMVGWAS.bash - perform a multivariate k-mer-based GWAS in GEMMA 
 
-s14_2_kmerUVGWAS.bash
+s14_2_kmerUVGWAS.bash - perform a univariate k-mer-based GWAS in GEMMA (I think running multiple types of models is a good practice)
 
-s15_0_plotKmerGWASresults.R
+s15_0_plotKmerGWASresults.R - R script for plotting results of k-mer-based GWAS
 
-s15_1_plotKmerGWASresults.bash
+s15_1_plotKmerGWASresults.bash - job script to call s15_0 from slurm cluster
 
-s16_0_IntersectKmerLists.bash
+### Part 5 Interpreting results
+s16_0_IntersectKmerLists.bash - find k-mers that are significant in multiple models
 
-s16_1_splitKmerList.bash
+s16_1_splitKmerList.bash - break list of significant k-mers into pieces again for parallel processing
 
-s16_2_loopOverSigKmers.bash
+s16_2_loopOverSigKmers.bash - use a while loop to find the accessions each significant k-mer is present in, as well as find k-mers with identical presence/absence patterns to the significant k-mers
 
-s17_0_prepForAssembly.bash
+s17_0_prepForAssembly.bash - create individual directories for assembling the WGS reads containing each significant k-mer
 
-s17_1_makeFqFile.bash
+s17_1_makeFqFile.bash - convert significant k-mer lists to fastq files because that's required by KMC filtering
 
-s18_filterReadsWithSigKmers.bash
+s18_filterReadsWithSigKmers.bash - use KMC to filter out WGS reads that don't contain significant k-mers
 
-s19_0_extractReadPairs.bash
+s19_0_extractReadPairs.bash - for paired end data, find the mates to reads that contain significant k-mers
 
-s19_1_localAssembly.bash
+s19_1_localAssembly.bash - assemble WGS reads containing significant k-mers into scaffolds
 
-s20_0_makeBLASTdb.bash
+s20_0_makeBLASTdb.bash - create a BLAST database of sequences you want to compare your scaffolds to
 
-s20_1_BLAST.bash
+s20_1_BLAST.bash - BLAST the longest scaffold assembled from each k-mer to your reference database
+
+Finally, you can look at the alignments given to you by BLAST to find potential variants and genes controlling your traits of interest
