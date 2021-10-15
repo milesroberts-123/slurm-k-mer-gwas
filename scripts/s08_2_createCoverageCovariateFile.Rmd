@@ -1,0 +1,119 @@
+---
+title: "Create coverage covariate file for GEMMA"
+author: "Miles Roberts"
+date: "2021-09-02"
+output: html_document
+---
+# Goals: 
+* Calculate coverage for each *Arabidopsis* accession
+* Investigate if differences in coverage could be driving associations
+
+## Visualize coverage differences
+```{r}
+rm(list=ls())
+library(ggplot2)
+#To get this file: `./seqkit stats -j 100 *trim.fastq -T`
+fqstats = read.table("trimmedFastqStats.txt", header = T)
+
+#Get accession numbers
+fqstats$accession = gsub("_.*$", "", fqstats$file)
+
+#Calculate coverage of Arabidopsis genome for each accession
+coverage = aggregate(sum_len ~ accession, data = fqstats, FUN = sum)
+coverage$cover = coverage$sum_len/119668634
+
+#What's the distribution of coverage for this data
+hist(coverage$cover, main = "Histogram of coverage", xlab = "Coverage")
+abline(v = median(coverage$cover))
+
+#Save coverage as a covariate to include in kmer-based GWAS
+covariateFile = data.frame(intercept = rep(1, times = length(coverage$cover)), coverage = coverage$cover)
+write.table(covariateFile, "coverageCovariate.txt", row.names = F, quote = F, col.names = F)
+```
+
+## Do accessions with greater coverage have more kmers that reach frequency threshold?
+```{r}
+#To get this file: `wc -l *kmers.txt > kmerCounts.txt`
+kmerCounts = read.table("kmerCounts.txt")
+
+#Remove last row, which is not relevant
+kmerCounts = kmerCounts[-nrow(kmerCounts),]
+
+#Get accessions
+kmerCounts$V2 = gsub("_kmers.txt", "", kmerCounts$V2)
+names(kmerCounts)[2] = "accession"
+names(kmerCounts)[1] = "kmerCount"
+
+#What's the distribution of k-mer counts?
+hist(kmerCounts$kmerCount, main = "Histogram of k-mer counts", xlab = "Coverage")
+abline(v = median(kmerCounts$kmerCount))
+
+#Merge with coverage
+coverageCounts = merge(coverage, kmerCounts, by = "accession")
+
+#Plot correlation
+ggplot(coverageCounts, aes(cover, kmerCount)) +
+  geom_point() +
+  theme_classic() +
+  theme(text = element_text(size=14)) +
+  labs(x = "Coverage", y = "Number of 31-mers present (frequency >= 10)")
+
+#plot(coverageCounts$cover, coverageCounts$kmerCount, xlab = "Coverage", ylab = "Number of kmers present")
+
+#Save number of kmers as covariate file
+write.table(cbind(rep(1, times = nrow(kmerCounts)), kmerCounts$kmerCount), "kmerCountCovariate.txt", row.names = F, quote = F, col.names = F, sep = "\t") 
+```
+
+## Does coverage correlate with the phenotypes or latitude?
+```{r}
+phenos = read.table("pheno_kmerGWAS_FT16_RGR_normalized_withAcc.txt")
+names(phenos) = c("accession", "FT16", "RGR")
+
+coverAndPheno = merge(coverageCounts, phenos, by = "accession")
+
+ggplot(coverAndPheno, aes(kmerCount, FT16)) +
+  geom_point() +
+  theme_classic() +
+  theme(text = element_text(size=14)) +
+  labs(x = "Number of 31-mers present (frequency > 9)", y = "Normalized FT16")
+cor.test(coverAndPheno$kmerCount, coverAndPheno$FT16)
+
+ggplot(coverAndPheno, aes(kmerCount, RGR)) +
+  geom_point() +
+  theme_classic() +
+  theme(text = element_text(size=14)) +
+  labs(x = "Number of 31-mers present (frequency > 9)", y = "Normalized RGR")
+cor.test(coverAndPheno$kmerCount, coverAndPheno$RGR)
+
+ggplot(coverAndPheno, aes(cover, FT16)) +
+  geom_point() +
+  theme_classic() +
+  theme(text = element_text(size=14)) +
+  labs(x = "Coverage", y = "Normalized FT16")
+cor.test(coverAndPheno$cover, coverAndPheno$FT16)
+
+ggplot(coverAndPheno, aes(cover, RGR)) +
+  geom_point() +
+  theme_classic() +
+  theme(text = element_text(size=14)) +
+  labs(x = "Coverage", y = "Normalized RGR")
+cor.test(coverAndPheno$cover, coverAndPheno$RGR)
+
+#Linear models
+ftCountMod = lm(FT16 ~ kmerCount, data = coverAndPheno)
+summary(ftCountMod)
+plot(ftCountMod)
+
+ftCoverMod = lm(FT16 ~ cover, data = coverAndPheno)
+summary(ftCoverMod)
+plot(ftCoverMod)
+
+rgrCountMod = lm(RGR ~ kmerCount, data = coverAndPheno)
+summary(rgrCountMod)
+plot(rgrCountMod)
+
+rgrCoverMod = lm(RGR ~ cover, data = coverAndPheno)
+summary(rgrCoverMod)
+plot(rgrCoverMod)
+
+```
